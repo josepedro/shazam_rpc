@@ -6,11 +6,69 @@
 
 #include "shazam.h"
 
-char **
-get_music_information_100_svc(Buffer *argp, struct svc_req *rqstp)
-{
+ //Servidor e Cliente
+Buffer *get_music_buffer(char *name_file){
+    SF_INFO info;
+    SNDFILE *sf;
+    sf = sf_open(name_file,SFM_READ,&info);
+    if (sf == NULL){
+        printf("Failed to open the file.\n");
+        exit(-1);
+    }
+    Buffer *buffer = malloc(sizeof(Buffer));
+    buffer->size = info.frames*info.channels;
+    buffer->buffer = (float *) malloc(buffer->size*sizeof(float));
+    sf_read_float(sf,buffer->buffer,buffer->size);
+    sf_close(sf);
+    return buffer;
+}
+
+//Servidor
+float calculate_mean(Buffer *buffer){
+    //Calculating the mean array
+    int i;
+    float sum = 0;
+    for (i = 0; i < buffer->size; ++i){
+        sum = sum + buffer->buffer[i];
+      //printf("\n%f\n",sum);
+    }
+    sum = sum/buffer->size;
+    //printf("%f\n", sum);
+    return sum;
+}
+
+//Servidor
+float calculate_covariance(Buffer *bufferX, Buffer *bufferY){
+    float meanX  = calculate_mean(bufferX);
+    float meanY  = calculate_mean(bufferY);
+    int i;
+    float covariance = 0;
+    for (i = 0; i < bufferX->size; ++i){
+        covariance = covariance + (bufferX->buffer[i] - meanX)*(bufferY->buffer[i] - meanY);
+    }
+    //printf("\n%f\n", covariance);
+    return covariance;
+}
+
+//Servidor
+float calculate_correlation_pearson(Buffer *bufferX, Buffer *bufferY){
+    float standart_deviationX = sqrt(calculate_covariance(bufferX, bufferX));
+    //printf("\n%f\n", standart_deviationX);
+    float standart_deviationY = sqrt(calculate_covariance(bufferY, bufferY));
+    //printf("\n%f\n", standart_deviationY);
+    float correlation = calculate_covariance(bufferX, bufferY);
+    float normalization_part = standart_deviationX*standart_deviationY;
+    correlation = correlation/normalization_part;
+    //printf("\ncorrelation: %f\n", correlation);
+    return correlation;
+}
+
+
+char **get_music_information_100_svc(Buffer *argp, struct svc_req *rqstp){	
+	int i;
+	printf("%d\n",argp->size);
+
 	static char * result = "FUNFANTE";
-	printf("%s\n",result );
 
 	return &result;
 }

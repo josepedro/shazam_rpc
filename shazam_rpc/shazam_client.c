@@ -5,9 +5,29 @@
  */
 
 #include "shazam.h"
+#include <stdio.h>
+#include <math.h>
+#include <complex.h>
+#include <stdlib.h>
+#include <sndfile.h>
 
+Buffer *get_music_buffer(char *name_file){
+    SF_INFO info;
+    SNDFILE *sf;
+    sf = sf_open(name_file,SFM_READ,&info);
+    if (sf == NULL){
+        printf("Failed to open the file.\n");
+        exit(-1);
+    }
+    Buffer *buffer = malloc(sizeof(Buffer));
+    buffer->size = info.frames*info.channels;
+    buffer->buffer = (float *) malloc(buffer->size*sizeof(float));
+    sf_read_float(sf,buffer->buffer,buffer->size);
+    sf_close(sf);
+    return buffer;
+}
 
-char *prog_100(char *host)
+char *prog_100(char *host, char *music_name)
 {
 	CLIENT *clnt;
 	char * *result_1;
@@ -22,8 +42,8 @@ char *prog_100(char *host)
 	}
 #endif	/* DEBUG */
 
-	result_1 = get_music_information_100(&get_music_information_100_arg, clnt);
-	printf("%s\n", *result_1);
+	Buffer *music_buffer = get_music_buffer(music_name);
+	result_1 = get_music_information_100(music_buffer, clnt);
 
 	if (result_1 == (char **) NULL) {
 		clnt_perror (clnt, "call failed");
@@ -48,7 +68,8 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 	host = argv[1];
-	char *music_information = prog_100(host);
-	printf("%s\n", music_information);
+	char *music_name = argv[2];
+	char *music_information = prog_100(host, music_name);
+	//printf("%s\n", argv[2]);
 exit (0);
 }

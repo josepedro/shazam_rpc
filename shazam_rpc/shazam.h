@@ -14,11 +14,10 @@ extern "C" {
 #endif
 
 
-struct Buffer {
+typedef struct _buffer{
 	float *buffer;
 	int size;
-};
-typedef struct Buffer Buffer;
+} Buffer;
 
 #define PROG 55555555
 #define VERSAO 100
