@@ -10,9 +10,11 @@ xdr_Buffer (XDR *xdrs, Buffer *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_pointer (xdrs, (char **)&objp->buffer, sizeof (float), (xdrproc_t) xdr_float))
-		 return FALSE;
+	int i;
 	 if (!xdr_int (xdrs, &objp->size))
+		 return FALSE;
+	 if (!xdr_vector (xdrs, (char *)objp->buffer, 44100,
+		sizeof (float), (xdrproc_t) xdr_float))
 		 return FALSE;
 	return TRUE;
 }

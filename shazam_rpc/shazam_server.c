@@ -5,8 +5,13 @@
  */
 
 #include "shazam.h"
+#include <stdio.h>
+#include <math.h>
+#include <complex.h>
+#include <stdlib.h>
+#include <sndfile.h>
 
- //Servidor e Cliente
+//Servidor e Cliente
 Buffer *get_music_buffer(char *name_file){
     SF_INFO info;
     SNDFILE *sf;
@@ -16,8 +21,8 @@ Buffer *get_music_buffer(char *name_file){
         exit(-1);
     }
     Buffer *buffer = malloc(sizeof(Buffer));
-    buffer->size = info.frames*info.channels;
-    buffer->buffer = (float *) malloc(buffer->size*sizeof(float));
+    buffer->size = 44100;
+    //buffer->buffer = (float *) malloc(buffer->size*sizeof(float));
     sf_read_float(sf,buffer->buffer,buffer->size);
     sf_close(sf);
     return buffer;
@@ -63,12 +68,33 @@ float calculate_correlation_pearson(Buffer *bufferX, Buffer *bufferY){
     return correlation;
 }
 
+char **
+get_music_information_100_svc(Buffer *buffer, struct svc_req *rqstp)
+{
+	static char * result="FUNFOU ESSA PARADA";
+	//printf("%f\n",buffer->buffer[44100 - 1] );
 
-char **get_music_information_100_svc(Buffer *argp, struct svc_req *rqstp){	
-	int i;
-	printf("%d\n",argp->size);
+	Buffer *music_1 = (Buffer *) get_music_buffer("i_can_see.wav");
+    Buffer *music_2 = (Buffer *) get_music_buffer("oh_darling.wav");
+    Buffer *music_3 = (Buffer *) get_music_buffer("smoke_on_the_water.wav");
+    float correlation_1 = calculate_correlation_pearson(buffer, music_1);
+    correlation_1 = sqrt(correlation_1*correlation_1);
+    float correlation_2 = calculate_correlation_pearson(buffer, music_2);
+    correlation_2 = sqrt(correlation_2*correlation_2);
+    float correlation_3 = calculate_correlation_pearson(buffer, music_3);
+    correlation_3 = sqrt(correlation_3*correlation_3);
 
-	static char * result = "FUNFANTE";
+    if (correlation_1 > correlation_2 && correlation_1 > correlation_3)
+    {
+        result = "jimmy cliff - i can see clearly now";
+    }else if (correlation_2 > correlation_1 && correlation_2 > correlation_3)
+    {
+        result = "The Beatles - Oh! Darling";
+    }else if (correlation_3 > correlation_1 && correlation_3 > correlation_2)
+    {
+        result = "Deep Purple - Smoke on the Water";
+    }
 
+    printf("%s\n", result);
 	return &result;
 }

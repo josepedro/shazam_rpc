@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <sndfile.h>
 
-Buffer *get_music_buffer(char *name_file){
+Buffer **get_music_buffer(char *name_file, Buffer **buffer){
     SF_INFO info;
     SNDFILE *sf;
     sf = sf_open(name_file,SFM_READ,&info);
@@ -19,42 +19,49 @@ Buffer *get_music_buffer(char *name_file){
         printf("Failed to open the file.\n");
         exit(-1);
     }
-    Buffer *buffer = malloc(sizeof(Buffer));
-    buffer->size = info.frames*info.channels;
-    buffer->buffer = (float *) malloc(buffer->size*sizeof(float));
-    sf_read_float(sf,buffer->buffer,buffer->size);
+    //buffer = malloc(sizeof(Buffer));
+    (*buffer)->size = 44100;
+    float *buf = (float *) malloc((*buffer)->size*sizeof(float));
+    sf_read_float(sf,buf,(*buffer)->size);
+    int i;
+    for (i = 0; i < (*buffer)->size; ++i)
+    {
+    	(*buffer)->buffer[i] = buf[i];
+    }
     sf_close(sf);
     return buffer;
 }
 
-char *prog_100(char *host, char *music_name)
+void
+prog_100(char *host, char *music_name)
 {
 	CLIENT *clnt;
 	char * *result_1;
 	Buffer  get_music_information_100_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, PROG, VERSAO, "udp");
-
+	clnt = clnt_create (host, PROG, VERSAO, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
 	}
 #endif	/* DEBUG */
 
-	Buffer *music_buffer = get_music_buffer(music_name);
+	Buffer *music_buffer = malloc(sizeof(Buffer));
+	Buffer **buffer = get_music_buffer(music_name, &music_buffer);
+	int i;
+	music_buffer = *buffer;
+	//printf("%f\n", music_buffer->buffer[44100 - 1]);
 	result_1 = get_music_information_100(music_buffer, clnt);
-
 	if (result_1 == (char **) NULL) {
 		clnt_perror (clnt, "call failed");
 	}
-#ifndef	DEBUG
 
+	printf("A musica ouvida foi: %s\n", *result_1);
+
+#ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */
-
-	return *result_1;
-
 }
 
 
@@ -69,7 +76,6 @@ main (int argc, char *argv[])
 	}
 	host = argv[1];
 	char *music_name = argv[2];
-	char *music_information = prog_100(host, music_name);
-	//printf("%s\n", argv[2]);
+	prog_100 (host, music_name);
 exit (0);
 }
